@@ -1,83 +1,124 @@
 // src/pages/RecipeDetail.jsx
 
-import React from "react";
+import React, { useState } from "react";
 
-/**
- * Zeigt das ausgewählte Rezept im Detail an.
- * @param {object} recipe - Rezeptobjekt (title, image, summary, extendedIngredients, ...)
- * @param {function} onGoBack - Callback, um zur Liste zurückzukehren
- * @param {function} onAddToFavorites - Callback, um das Rezept in die Favoritenliste aufzunehmen
- * @param {boolean} loading - zeigt an, ob Daten noch laden
- */
 export default function RecipeDetail({
   recipe,
   onGoBack,
-  onAddToFavorites,
   loading,
+  isInFavorites,
+  addToFavorites,
+  removeFromFavorites,
 }) {
-  if (!recipe) {
-    return <p>Kein Rezept ausgewählt.</p>;
-  }
+  const [viewMode, setViewMode] = useState("ingredients");
+
+  if (!recipe) return <p>Kein Rezept ausgewählt.</p>;
+
+  // Toggle-Logik: Falls in Favoriten => "Remove from Favorites" (rot), sonst "Add to Favorites" (grün)
+  const inFavs = isInFavorites(recipe);
 
   return (
-    <div className="bg-white rounded shadow p-4">
-      {/* Ladeindikator */}
-      {loading && <p>Wird geladen...</p>}
-
-      {/* Go Back -> zurück zur Liste */}
-      <button
-        onClick={onGoBack}
-        className="mb-4 px-3 py-1 bg-gray-600 text-white rounded"
-      >
-        Go Back
-      </button>
-
-      {/* Add to Favorites */}
-      <button
-        onClick={() => onAddToFavorites(recipe)}
-        className="mb-4 ml-2 px-3 py-1 bg-green-500 text-white rounded"
-      >
-        Add to Favorites
-      </button>
-
-      {/* Rezepttitel */}
-      <h2 className="text-xl font-bold mb-2">{recipe.title}</h2>
-
-      {/* Rezeptbild */}
-      <img
-        src={recipe.image}
-        alt={recipe.title}
-        className="mb-4 w-full h-auto rounded"
-      />
-
-      {/* Zusammenfassung (HTML) */}
-      <p
-        className="mb-4"
-        dangerouslySetInnerHTML={{ __html: recipe.summary }}
-      />
-
-      {/* Zutatenliste */}
-      <h3 className="text-lg font-semibold mb-2">Zutaten</h3>
-      <ul className="list-disc pl-5 mb-4">
-        {recipe.extendedIngredients?.map((ing) => (
-          <li key={ing.id}>{ing.original}</li>
-        ))}
-      </ul>
-
-      {/* Nährwerte (falls vorhanden) */}
-      {recipe.nutrition && (
-        <>
-          <h3 className="text-lg font-semibold mb-2">Nährwerte</h3>
-          <ul className="list-disc pl-5">
-            {recipe.nutrition.nutrients.map((nutrient) => (
-              <li key={nutrient.name}>
-                {nutrient.name}: {nutrient.amount}
-                {nutrient.unit}
-              </li>
-            ))}
-          </ul>
-        </>
+    <div className="max-w-6xl mx-auto p-4 bg-white dark:bg-gray-800 dark:text-white rounded shadow">
+      {loading && (
+        <p className="mb-2 text-sm text-gray-500 dark:text-gray-300">
+          Loading details...
+        </p>
       )}
+
+      {/* Header: Titel, Buttons */}
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-3xl font-bold">{recipe.title}</h1>
+
+        <div>
+          <button
+            onClick={onGoBack}
+            className="px-3 py-1 bg-gray-300 text-gray-800 rounded mr-2 dark:bg-gray-700 dark:text-white"
+          >
+            Go Back
+          </button>
+          <button
+            onClick={() => {
+              if (inFavs) {
+                removeFromFavorites(recipe);
+              } else {
+                addToFavorites(recipe);
+              }
+            }}
+            className={`px-3 py-1 rounded ${
+              inFavs
+                ? "bg-red-500 text-white"
+                : "bg-green-500 text-white"
+            }`}
+          >
+            {inFavs ? "Remove from Favorites" : "Add to Favorites"}
+          </button>
+        </div>
+      </div>
+
+      {/* 2-spaltiges Layout */}
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Linke Spalte: Bild */}
+        <div className="md:w-1/2">
+          <img
+            src={recipe.image}
+            alt={recipe.title}
+            className="w-full h-auto rounded mb-4"
+          />
+        </div>
+
+        {/* Rechte Spalte: Buttons + Info */}
+        <div className="md:w-1/2">
+          {/* Tab-Buttons */}
+          <div className="flex gap-4 mb-4">
+            <button
+              onClick={() => setViewMode("ingredients")}
+              className={`px-4 py-2 rounded ${
+                viewMode === "ingredients"
+                  ? "bg-black text-white"
+                  : "bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-white"
+              }`}
+            >
+              Ingredients
+            </button>
+            <button
+              onClick={() => setViewMode("instructions")}
+              className={`px-4 py-2 rounded ${
+                viewMode === "instructions"
+                  ? "bg-black text-white"
+                  : "bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-white"
+              }`}
+            >
+              Instructions
+            </button>
+          </div>
+
+          {/* Content je nach Tab */}
+          {viewMode === "ingredients" && (
+            <div>
+              <h2 className="text-xl font-semibold mb-2">Ingredients</h2>
+              <ul className="list-disc pl-5 mb-4">
+                {recipe.extendedIngredients?.map((ing) => (
+                  <li key={ing.id}>{ing.original}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {viewMode === "instructions" && (
+            <div>
+              <h2 className="text-xl font-semibold mb-2">Instructions</h2>
+              {recipe.instructions ? (
+                <div
+                  className="leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: recipe.instructions }}
+                />
+              ) : (
+                <p>Keine Anleitung vorhanden.</p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
