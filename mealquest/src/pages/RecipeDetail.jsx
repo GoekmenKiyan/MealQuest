@@ -1,5 +1,3 @@
-// src/pages/RecipeDetail.jsx
-
 import React, { useState } from "react";
 
 export default function RecipeDetail({
@@ -10,11 +8,12 @@ export default function RecipeDetail({
   addToFavorites,
   removeFromFavorites,
 }) {
+  // "viewMode" => "ingredients" oder "instructions"
   const [viewMode, setViewMode] = useState("ingredients");
 
   if (!recipe) return <p>Kein Rezept ausgewählt.</p>;
 
-  // Toggle-Logik: Falls in Favoriten => "Remove from Favorites" (rot), sonst "Add to Favorites" (grün)
+  // Prüfen => ist das Rezept in Favorites?
   const inFavs = isInFavorites(recipe);
 
   return (
@@ -25,10 +24,9 @@ export default function RecipeDetail({
         </p>
       )}
 
-      {/* Header: Titel, Buttons */}
+      {/* Titel + Buttons */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-3xl font-bold">{recipe.title}</h1>
-
         <div>
           <button
             onClick={onGoBack}
@@ -36,6 +34,7 @@ export default function RecipeDetail({
           >
             Go Back
           </button>
+          {/* Toggle Favorites */}
           <button
             onClick={() => {
               if (inFavs) {
@@ -55,9 +54,9 @@ export default function RecipeDetail({
         </div>
       </div>
 
-      {/* 2-spaltiges Layout */}
+      {/* 2-spaltiges Layout => flex-row (ab md) */}
       <div className="flex flex-col md:flex-row gap-6">
-        {/* Linke Spalte: Bild */}
+        {/* Bild links */}
         <div className="md:w-1/2">
           <img
             src={recipe.image}
@@ -66,9 +65,9 @@ export default function RecipeDetail({
           />
         </div>
 
-        {/* Rechte Spalte: Buttons + Info */}
+        {/* Rechts: Tab-Buttons + Content */}
         <div className="md:w-1/2">
-          {/* Tab-Buttons */}
+          {/* Buttons => viewMode switch */}
           <div className="flex gap-4 mb-4">
             <button
               onClick={() => setViewMode("ingredients")}
@@ -92,7 +91,7 @@ export default function RecipeDetail({
             </button>
           </div>
 
-          {/* Content je nach Tab */}
+          {/* Inhalt je nach viewMode */}
           {viewMode === "ingredients" && (
             <div>
               <h2 className="text-xl font-semibold mb-2">Ingredients</h2>
@@ -108,6 +107,7 @@ export default function RecipeDetail({
             <div>
               <h2 className="text-xl font-semibold mb-2">Instructions</h2>
               {recipe.instructions ? (
+                // instructions oft als HTML => dangerouslySetInnerHTML
                 <div
                   className="leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: recipe.instructions }}

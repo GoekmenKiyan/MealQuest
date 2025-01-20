@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import jsPDF from "jspdf";
 
-// Eigene Komponenten:
 import SearchBar from "./SearchBar";
 import RecipeList from "./RecipeList";
 import RecipeDetail from "./RecipeDetail";
@@ -12,16 +11,14 @@ import RecipeDetail from "./RecipeDetail";
 export default function Home() {
   const API_KEY = import.meta.env.VITE_SPOONACULAR_API_KEY;
 
-  // Such & Rezept-State
+  // state => Suchbegriff, Rezepte, offset, loading...
   const [searchTerm, setSearchTerm] = useState("");
   const [recipes, setRecipes] = useState([]);
-
-  // Für Paginierung oder was du bereits hast
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  // Detail
+  // selectedRecipe => Detailansicht
   const [selectedRecipe, setSelectedRecipe] = useState(null);
 
   // Filter
@@ -32,10 +29,10 @@ export default function Home() {
   // Suchhistorie
   const [searchHistory, setSearchHistory] = useState([]);
 
-  // **Favoriten**: Array von Rezept-Objekten
+  // Favoriten => Rezepte als Array
   const [favorites, setFavorites] = useState([]);
 
-  // Beim Mount: Suchhistorie aus localStorage
+  // Suchhistorie laden
   useEffect(() => {
     const saved = localStorage.getItem("searchHistory");
     if (saved) {
@@ -43,12 +40,12 @@ export default function Home() {
     }
   }, []);
 
-  // Bei Änderungen: Speichern
+  // Speichern => localStorage
   useEffect(() => {
     localStorage.setItem("searchHistory", JSON.stringify(searchHistory));
   }, [searchHistory]);
 
-  // ============= Rezepte abrufen (mit offset, if needed) =============
+  // Rezepte laden => complexSearch
   const fetchRecipes = async (newOffset = 0, append = false) => {
     if (!searchTerm) return;
     setLoading(true);
@@ -78,13 +75,11 @@ export default function Home() {
       );
       const newResults = resp.data.results || [];
 
-      // Falls append -> anfügen, sonst neu setzen
       if (append) {
         setRecipes((prev) => [...prev, ...newResults]);
       } else {
         setRecipes(newResults);
       }
-      // Einfache Logik: wenn <6 zurückkommen -> hasMore=false
       if (newResults.length < 6) {
         setHasMore(false);
       } else {
@@ -98,24 +93,27 @@ export default function Home() {
     }
   };
 
-  // ============= Suche, Filter, etc. =============
+  // Suchen
   const handleSearch = (e) => {
     e.preventDefault();
     if (!searchTerm) return;
+    // in Historie packen
     setSearchHistory((prev) => [...prev, searchTerm]);
+    // offset=0 => Neu
     fetchRecipes(0, false);
   };
 
+  // Filter/Sort anwenden => neu laden
   const applyFiltersAndSort = () => {
     fetchRecipes(0, false);
   };
 
-  // "Load More" (falls du es so handhabst)
+  // "Load More" => next offset
   const loadMore = () => {
     fetchRecipes(offset + 6, true);
   };
 
-  // ============= Detailanzeige =============
+  // Detail
   const showRecipeDetails = async (id) => {
     setLoading(true);
     try {
@@ -135,26 +133,19 @@ export default function Home() {
     setSelectedRecipe(null);
   };
 
-  // ============= Favoriten-Logik =============
-  // Rezept in Favorites?
+  // Favoriten
   const isInFavorites = (recipe) => {
     return favorites.some((fav) => fav.id === recipe.id);
   };
-
-  // Add
   const addToFavorites = (recipe) => {
     if (!recipe) return;
     if (!isInFavorites(recipe)) {
       setFavorites([...favorites, recipe]);
     }
   };
-
-  // Remove
   const removeFromFavorites = (recipe) => {
     setFavorites((prev) => prev.filter((fav) => fav.id !== recipe.id));
   };
-
-  // PDF-Export
   const exportFavoritesAsPDF = () => {
     const doc = new jsPDF();
     doc.text("My Favorite Recipes", 10, 10);
@@ -166,20 +157,19 @@ export default function Home() {
     doc.save("favorites.pdf");
   };
 
-  // ============= Render =============
+  // Render
   return (
     <div className="max-w-5xl mx-auto p-4">
-      {/* Wenn KEIN Rezept selektiert, zeig Start-Ansicht */}
+      {/* Wenn KEIN Rezept ausgewählt -> Start */}
       {!selectedRecipe && (
         <>
-          {/* HEAD: SearchBar */}
+          {/* Search + Filter */}
           <div className="flex flex-col items-center justify-center mb-8">
             <SearchBar
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
               onSearch={handleSearch}
             />
-            {/* Zwei runde Buttons (Vegetarian, Vegan) */}
             <div className="flex gap-4 mt-4">
               <button
                 onClick={() => setDietVegetarian(!dietVegetarian)}
@@ -204,8 +194,6 @@ export default function Home() {
                 Vegan
               </button>
             </div>
-
-            {/* Sort + Apply */}
             <div className="flex items-center gap-4 mt-4">
               <select
                 value={sortOption}
@@ -247,7 +235,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* Favoritenliste: rotes X zum Entfernen */}
+          {/* Favoritenliste */}
           {favorites.length > 0 && (
             <div className="bg-white p-4 rounded shadow mb-4">
               <h3 className="font-bold mb-2">My Favorites</h3>
@@ -276,6 +264,7 @@ export default function Home() {
           {/* Rezeptliste */}
           <RecipeList recipes={recipes} onRecipeClick={showRecipeDetails} />
 
+          {/* Ladeindikator */}
           {loading && (
             <div className="text-center my-4">
               <span className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-500 border-t-transparent"></span>
@@ -283,7 +272,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* Optional Load More */}
+          {/* Load More => infinite scroll via button */}
           {!loading && recipes.length > 0 && hasMore && (
             <div className="flex justify-center my-4">
               <button
@@ -297,12 +286,12 @@ export default function Home() {
         </>
       )}
 
-      {/* Detailansicht */}
+      {/* Detail-Ansicht */}
       {selectedRecipe && (
         <RecipeDetail
           recipe={selectedRecipe}
           loading={loading}
-          // Geben wir Props für Favorites weiter:
+          // Weitergeben, damit wir im Detail toggeln können
           isInFavorites={(r) => isInFavorites(r)}
           addToFavorites={addToFavorites}
           removeFromFavorites={removeFromFavorites}
@@ -312,4 +301,3 @@ export default function Home() {
     </div>
   );
 }
-

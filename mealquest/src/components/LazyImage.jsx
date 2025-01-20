@@ -1,18 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 
 function LazyImage({ src, alt, className }) {
-  const [isVisible, setIsVisible] = useState(false); // Sichtbarkeit im Viewport
-  const [loaded, setLoaded] = useState(false);       // Ladezustand des Bildes
+  // isVisible => ob das Element im Viewport ist
+  const [isVisible, setIsVisible] = useState(false);
+  // loaded => ob das <img> fertig geladen wurde (für Fade-in-Effekt)
+  const [loaded, setLoaded] = useState(false);
+
+  // Referenz aufs Container-DIV
   const imgRef = useRef(null);
 
+  // useEffect => IntersectionObserver
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
+        // isIntersecting => User sieht >=10% des Elements
         if (entry.isIntersecting) {
-          setIsVisible(true); // Bild ist im sichtbaren Bereich
+          setIsVisible(true);
         }
       },
-      { threshold: 0.1 } // Auslösen, wenn 10% des Bildes sichtbar sind
+      { threshold: 0.1 }
     );
 
     if (imgRef.current) {
@@ -29,16 +35,18 @@ function LazyImage({ src, alt, className }) {
   return (
     <div
       ref={imgRef}
+      // "bg-gray-200" => grauer Hintergrund als Platzhalter
       className={`relative overflow-hidden bg-gray-200 ${className}`}
-      style={{ minHeight: '8rem' }} // Platzhalterhöhe
+      style={{ minHeight: "8rem" }} // minimal 8rem Platz
     >
       {isVisible && (
         <img
           src={src}
           alt={alt}
-          onLoad={() => setLoaded(true)} // Bild geladen
+          onLoad={() => setLoaded(true)}
+          // Fade-in => "opacity-0" bis loaded=true
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
-            loaded ? 'opacity-100' : 'opacity-0'
+            loaded ? "opacity-100" : "opacity-0"
           }`}
         />
       )}

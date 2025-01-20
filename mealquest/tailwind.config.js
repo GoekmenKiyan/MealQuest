@@ -7,6 +7,7 @@ module.exports = {
   theme: {
     extend: {},
       fontFamily: {
+        // "sans" wird auf Montserrat gemappt
         sans: ['Montserrat', 'ui-sans-serif', 'system-ui']
       }
   },
